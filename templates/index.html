@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot - Data Visualization</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+        #chatbox {
+            width: 60%;
+            margin: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        .user-message {
+            text-align: right;
+            color: blue;
+        }
+        .bot-message {
+            text-align: left;
+            color: green;
+        }
+        #plot-container {
+            margin-top: 20px;
+            display: none;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+            background: #f9f9f9;
+        }
+        #upload-container {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Chatbot - Data Visualization</h2>
+
+    <!-- File Upload Section -->
+    <div id="upload-container">
+        <input type="file" id="file-input">
+        <button onclick="uploadFile()">Upload CSV</button>
+    </div>
+
+    <div id="chatbox"></div>
+
+    <input type="text" id="user-input" placeholder="Type your message..." style="width: 60%;">
+    <button onclick="sendMessage()">Send</button>
+
+    <!-- Plot Display Section -->
+    <div id="plot-container">
+        <h3>Generated Plot:</h3>
+        <img id="plot-image" src="" alt="Generated Plot">
+    </div>
+
+    <script>
+        function uploadFile() {
+            var fileInput = document.getElementById("file-input");
+            var file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select a file first.");
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append("file", file);
+
+            $.ajax({
+                url: "/upload",
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    $("#chatbox").append("<p class='bot-message'>Bot: " + response.response + "</p>");
+                    $("#chatbox").scrollTop($("#chatbox")[0].scrollHeight);
+                },
+                error: function() {
+                    alert("File upload failed.");
+                }
+            });
+        }
+
+        function sendMessage() {
+            var userMessage = $("#user-input").val();
+            $("#chatbox").append("<p class='user-message'>You: " + userMessage + "</p>");
+            $("#user-input").val("");
+
+            $.ajax({
+                url: "/chat",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ "message": userMessage }),
+                success: function(response) {
+                    if (response.image_url) {
+                        $("#plot-container").show();
+                        $("#plot-image").attr("src", response.image_url);
+                        $("#chatbox").append("<p class='bot-message'>Bot: Here is your plot!</p>");
+                    } else {
+                        $("#chatbox").append("<p class='bot-message'>Bot: " + response.response + "</p>");
+                    }
+                    $("#chatbox").scrollTop($("#chatbox")[0].scrollHeight);
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
